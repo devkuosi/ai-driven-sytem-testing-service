@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0",
+  "target_id": "demo-users-api",
+  "base_url": "http://127.0.0.1:8001",
+  "timeout_seconds": 5,
+  "max_steps": 20,
+  "auth": null
+}
