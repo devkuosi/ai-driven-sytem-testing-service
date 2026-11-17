@@ -1,0 +1,101 @@
+{
+  "schema_version": "1.0",
+  "plan_id": "registration-underage",
+  "name": "Reject underage registration without saving a user",
+  "requirement_ids": [
+    "DEMO-01",
+    "DEMO-04"
+  ],
+  "variables": {
+    "run_suffix": {
+      "generator": "uuid4"
+    }
+  },
+  "setup": [
+    {
+      "id": "confirm-user-absent",
+      "request": {
+        "method": "GET",
+        "path": "/users",
+        "params": {
+          "email": "underage-${run_suffix}@example.test"
+        }
+      },
+      "assertions": [
+        {
+          "type": "status_code",
+          "equals": 200,
+          "requirement_id": "DEMO-04"
+        },
+        {
+          "type": "json_equals",
+          "pointer": "/items",
+          "equals": [],
+          "requirement_id": "DEMO-04"
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "id": "register-underage-user",
+      "request": {
+        "method": "POST",
+        "path": "/users",
+        "json": {
+          "email": "underage-${run_suffix}@example.test",
+          "age": 17
+        }
+      },
+      "assertions": [
+        {
+          "type": "status_code",
+          "equals": 422,
+          "requirement_id": "DEMO-01"
+        }
+      ]
+    },
+    {
+      "id": "verify-no-user-created",
+      "request": {
+        "method": "GET",
+        "path": "/users",
+        "params": {
+          "email": "underage-${run_suffix}@example.test"
+        }
+      },
+      "assertions": [
+        {
+          "type": "status_code",
+          "equals": 200,
+          "requirement_id": "DEMO-04"
+        },
+        {
+          "type": "json_equals",
+          "pointer": "/items",
+          "equals": [],
+          "requirement_id": "DEMO-04"
+        }
+      ]
+    }
+  ],
+  "cleanup": [
+    {
+      "id": "remove-unexpected-test-user",
+      "request": {
+        "method": "DELETE",
+        "path": "/test-support/users",
+        "params": {
+          "email": "underage-${run_suffix}@example.test"
+        }
+      },
+      "assertions": [
+        {
+          "type": "status_code",
+          "equals": 204,
+          "requirement_id": "DEMO-04"
+        }
+      ]
+    }
+  ]
+}
