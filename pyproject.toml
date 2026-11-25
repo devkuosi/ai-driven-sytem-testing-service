@@ -7,9 +7,15 @@ name = "ai-driven-system-testing-service"
 version = "0.1.0"
 description = "AI-assisted REST API testing with traceable results"
 requires-python = ">=3.12"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "httpx",   
+]
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
