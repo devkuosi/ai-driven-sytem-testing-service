@@ -133,3 +133,51 @@ def test_rejects_duplicate_step_ids():
                 },
             ],
         })
+
+@pytest.mark.parametrize(
+    "expected",
+    [200, 422, "200", None, True, 99, 600],
+)
+def test_status_assertion_validation(expected):
+    plan = {
+        "plan_id": "health",
+        "steps": [
+            {
+                "id": "check-health",
+                "request": {"method": "GET", "path": "/health"},
+                "assertions": [
+                    {
+                        "type": "status_code",
+                        "equals": expected,
+                        "requirement_id": "DEMO-HEALTH",
+                    }
+                ],
+            }
+        ],
+    }
+
+    if type(expected) is int and expected in (200, 422):
+        validate_plan(plan)
+    else:
+        with pytest.raises(ValueError, match="Expected status"):
+            validate_plan(plan)
+
+def test_accepts_json_equals_assertion():
+    validate_plan({
+        "plan_id": "verify-no-user",
+        "steps": [
+            {
+                "id": "find-user",
+                "request": {"method": "GET", "path": "/users"},
+                "assertions": [
+                    {
+                        "type": "json_equals",
+                        "pointer": "/items",
+                        "equals": [],
+                        "requirement_id": "DEMO-04",
+                    }
+                ],
+            }
+        ],
+    })
+

@@ -1,0 +1,46 @@
+{
+  "plan_id": "underage-registration",
+  "steps": [
+    {
+      "id": "reject-underage-user",
+      "request": {
+        "method": "POST",
+        "path": "/users",
+        "json": {
+          "email": "underage-status@example.test",
+          "age": 17
+        }
+      },
+      "assertions": [
+        {
+          "type": "status_code",
+          "equals": 422,
+          "requirement_id": "DEMO-01"
+        }
+      ]
+    },
+    {
+      "id": "verify-user-not-saved",
+      "request": {
+        "method": "GET",
+        "path": "/users",
+        "params": {
+          "email": "underage-status@example.test"
+        }
+      },
+      "assertions": [
+        {
+          "type": "status_code",
+          "equals": 200,
+          "requirement_id": "DEMO-04"
+        },
+        {
+          "type": "json_equals",
+          "pointer": "/items",
+          "equals": [],
+          "requirement_id": "DEMO-04"
+        }
+      ]
+    }
+  ]
+}

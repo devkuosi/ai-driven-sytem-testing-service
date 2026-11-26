@@ -60,3 +60,46 @@ def validate_plan(plan: dict) -> None:
             or any(part in (".", "..") for part in path.split("/"))
         ):
             raise ValueError("Request path contains unsupported syntax.")
+        
+        assertions = step.get("assertions", [])
+
+        if not isinstance(assertions, list):
+            raise ValueError("assertions must be a list.")
+
+        for assertion in assertions:
+            if not isinstance(assertion, dict):
+                raise ValueError("Each assertion must be an object.")
+
+            assertion_type = assertion.get("type")
+
+            if assertion_type not in ("status_code", "json_equals"):
+                raise ValueError("Unsupported assertion type.")
+
+            requirement_id = assertion.get("requirement_id")
+
+            if not isinstance(requirement_id, str) or not requirement_id.strip():
+                raise ValueError("Assertion must reference a requirement.")
+
+            if assertion_type == "status_code":
+                expected = assertion.get("equals")
+
+                if type(expected) is not int or not 100 <= expected <= 599:
+                    raise ValueError(
+                        "Expected status must be an integer from 100 to 599."
+                    )
+
+            elif assertion_type == "json_equals":
+                pointer = assertion.get("pointer")
+
+                if (
+                    not isinstance(pointer, str)
+                    or not pointer.startswith("/")
+                    or "/" in pointer[1:]
+                    or "~" in pointer
+                ):
+                    raise ValueError(
+                        "Only simple top-level pointers are supported."
+                    )
+
+                if "equals" not in assertion:
+                    raise ValueError("JSON assertion must contain equals.")

@@ -23,7 +23,6 @@ def test_runner_plan(monkeypatch):
                     "method": "GET",
                     "path": "/health",
                 },
-                "body": {"status": "ok"},
             }
         ],
     }
@@ -31,7 +30,7 @@ def test_runner_plan(monkeypatch):
     results = run_plan(plan)
     assert calls == [("GET", "/health")]
     assert results == [
-        {"step_id": "check-health", "status_code": 200, "body": {"status": "ok"}}
+        {"step_id": "check-health", "status_code": 200}
     ]
 
 def test_runner_validates_entire_plan_before_sending_requests(monkeypatch):
@@ -164,3 +163,85 @@ def test_runner_sends_json_and_query_parameters(monkeypatch):
             "json": None,
         },
     ]    
+
+@pytest.mark.parametrize(
+    "actual, expected_passed",
+    [(200, True), (500, False)],
+)
+def test_runner_evaluates_status_assertion(
+    monkeypatch, actual, expected_passed
+):
+    def fake_request(self, method, url, **kwargs):
+        return httpx.Response(actual)
+
+    monkeypatch.setattr(httpx.Client, "request", fake_request)
+
+    plan = {
+        "plan_id": "health",
+        "steps": [
+            {
+                "id": "check-health",
+                "request": {"method": "GET", "path": "/health"},
+                "assertions": [
+                    {
+                        "type": "status_code",
+                        "equals": 200,
+                        "requirement_id": "DEMO-HEALTH",
+                    }
+                ],
+            }
+        ],
+    }
+
+    results = run_plan(plan)
+
+    assert results[0]["assertion_results"] == [
+        {
+            "requirement_id": "DEMO-HEALTH",
+            "expected": 200,
+            "actual": actual,
+            "passed": expected_passed,
+        }
+    ]
+
+@pytest.mark.parametrize(
+    "body, expected_passed",
+    [
+        ({"items": []}, True),
+        ({"items": [{"id": "unexpected-user"}]}, False),
+        ({}, False),
+    ],
+)
+def test_runner_evaluates_json_assertion(
+    monkeypatch, body, expected_passed
+):
+    def fake_request(self, method, url, **kwargs):
+        return httpx.Response(200, json=body)
+
+    monkeypatch.setattr(httpx.Client, "request", fake_request)
+
+    plan = {
+        "plan_id": "verify-no-user",
+        "steps": [
+            {
+                "id": "find-user",
+                "request": {"method": "GET", "path": "/users"},
+                "assertions": [
+                    {
+                        "type": "json_equals",
+                        "pointer": "/items",
+                        "equals": [],
+                        "requirement_id": "DEMO-04",
+                    }
+                ],
+            }
+        ],
+    }
+
+    results = run_plan(plan)
+    assertion = results[0]["assertion_results"][0]
+
+    assert assertion["passed"] is expected_passed
+
+    if "items" not in body:
+        assert assertion["detail"] == "JSON field is missing: /items"
