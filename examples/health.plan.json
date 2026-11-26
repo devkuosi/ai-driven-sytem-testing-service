@@ -1,0 +1,12 @@
+{
+  "plan_id": "demo-health",
+  "steps": [
+    {
+      "id": "check-health",
+      "request": {
+        "method": "GET",
+        "path": "/health"
+      }
+    }
+  ]
+}
